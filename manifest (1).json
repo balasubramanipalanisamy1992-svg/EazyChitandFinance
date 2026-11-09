@@ -1,0 +1,12 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "EazyChit Finance",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "EazyChit",
+  "start_url": "//EazyChit-Finance/",
+  "theme_color": "#000000",
+  "lang": "ta"
+}

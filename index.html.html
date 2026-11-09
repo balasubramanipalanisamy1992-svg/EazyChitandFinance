@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Micro Finance Enterprise App</title>
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- QR Code Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f1f5f9; }
+    </style>
+</head>
+<body class="pb-20 text-gray-900">
+
+    <!-- 1. AUTH / LOGIN & REGISTRATION & LICENSE KEY SCREEN -->
+    <div id="authScreen" class="fixed inset-0 bg-blue-900 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-sm w-full space-y-3 max-h-[92vh] overflow-y-auto">
+            <div class="text-center">
+                <span class="text-3xl">🏢</span>
+                <h2 id="authTitle" class="text-lg font-bold text-gray-800 mt-1">Smart Finance Login</h2>
+                <p id="authSubtitle" class="text-[11px] text-gray-500">உங்களது கணக்கில் உள்நுழையவும்</p>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="companyLoginForm" onsubmit="loginCompany(event)" class="space-y-2.5 text-sm">
+                <div>
+                    <label class="text-[11px] font-semibold text-gray-600">Username / Login ID</label>
+                    <input type="text" id="loginUser" placeholder="Username" required class="w-full p-2.5 text-xs border rounded-xl bg-gray-50 mt-0.5">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-gray-600">Password</label>
+                    <input type="password" id="loginPass" placeholder="Password" required class="w-full p-2.5 text-xs border rounded-xl bg-gray-50 mt-0.5">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl font-bold text-xs shadow transition">உள்நுழைவு (Login)</button>
+                
+                <div class="flex justify-between items-center text-[11px] pt-1">
+                    <button type="button" onclick="showRegisterView()" class="text-blue-600 font-semibold underline">புதியவர் பதிவு (Register)</button>
+                    <button type="button" onclick="showForgotView()" class="text-red-500 underline">பாஸ்வேர்ட் மறந்துவிட்டதா?</button>
+                </div>
+            </form>
+
+            <!-- Registration Form with Single-Device Key Lock -->
+            <form id="companyRegForm" onsubmit="registerCompany(event)" class="space-y-2 text-xs hidden">
+                <h3 class="font-bold text-center text-blue-700 text-sm">புதிய கம்பெனி பதிவு & லைசென்ஸ்</h3>
+                
+                <div class="bg-yellow-50 p-2 rounded-lg border border-yellow-300">
+                    <label class="text-[10px] font-bold text-yellow-800">லைசென்ஸ் கீ (License Key):</label>
+                    <input type="text" id="regLicenseKey" placeholder="எ.கா: FIN-2026-BALA1" required class="w-full p-2 text-xs border rounded-lg bg-white mt-0.5 font-bold tracking-wider text-blue-900">
+                </div>
+
+                <input type="text" id="regCompName" placeholder="கம்பெனி / சீட்டு ஃபண்ட் பெயர்" required class="w-full p-2 border rounded-lg bg-gray-50">
+                <input type="text" id="regOwner" placeholder="உரிமையாளர் பெயர்" required class="w-full p-2 border rounded-lg bg-gray-50">
+                <input type="text" id="regPhone" placeholder="போன் நம்பர்" required class="w-full p-2 border rounded-lg bg-gray-50">
+                <input type="email" id="regEmail" placeholder="மின் அஞ்சல் (Email)" required class="w-full p-2 border rounded-lg bg-gray-50">
+                <textarea id="regAddress" placeholder="முகவரி" required class="w-full p-2 border rounded-lg bg-gray-50 h-12"></textarea>
+                <input type="text" id="regUser" placeholder="New Username" required class="w-full p-2 border rounded-lg bg-gray-50">
+                <input type="password" id="regPass" placeholder="New Password" required class="w-full p-2 border rounded-lg bg-gray-50">
+                
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white p-2.5 rounded-lg font-bold shadow transition">பதிவு செய்து உள்நுழை</button>
+                <div class="text-center pt-1">
+                    <button type="button" onclick="showLoginView()" class="text-[11px] text-blue-600 underline">ஏற்கனவே கணக்கு உள்ளதா? Login</button>
+                </div>
+            </form>
+
+            <!-- Forgot Password Form -->
+            <div id="forgotPasswordBox" class="space-y-2.5 text-xs hidden">
+                <h3 class="font-bold text-center text-red-600 text-sm">பாஸ்வேர்ட் மீட்பு (OTP)</h3>
+                <input type="text" id="forgotTarget" placeholder="Registered Phone or Email" class="w-full p-2.5 border rounded-xl bg-gray-50">
+                <button type="button" onclick="sendOtp()" class="w-full bg-orange-500 text-white p-2 rounded-xl font-bold">OTP அனுப்பவும்</button>
+                <div id="otpSection" class="space-y-2 hidden">
+                    <input type="text" id="enteredOtp" placeholder="6 இலக்க OTP" class="w-full p-2.5 border rounded-xl bg-gray-50 text-center font-bold">
+                    <input type="password" id="newResetPass" placeholder="புதிய Password" class="w-full p-2.5 border rounded-xl bg-gray-50">
+                    <button type="button" onclick="verifyAndResetPass()" class="w-full bg-green-600 text-white p-2 rounded-xl font-bold">மாற்றுக</button>
+                </div>
+                <div class="text-center pt-1">
+                    <button type="button" onclick="showLoginView()" class="text-[11px] text-blue-600 underline">Login செல்ல</button>
+                </div>
+            </div>
+
+            <!-- LEGAL DISCLAIMER -->
+            <div class="border-t pt-1.5 text-[8px] text-gray-400 space-y-0.5 leading-tight">
+                <p class="text-[9px] font-bold text-gray-500 text-center">Terms & Conditions</p>
+                <p>1. <b>பொறுப்பு:</b> பணப் பரிவர்த்தனை மற்றும் சட்டரீதியான பொறுப்புகளுக்கு ஆப் உரிமையாளரே பொறுப்பு.</p>
+                <p>2. <b>தரவு:</b> கணக்குத் தரவுகள் அனைத்தும் உங்கள் சாதனத்தின் (Local Storage) பாதுகாப்பில் மட்டுமே சேமிக்கப்படும்.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP INTERFACE -->
+    <div id="mainApp" class="hidden">
+        <header class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-4 shadow-xl sticky top-0 z-40 flex justify-between items-center">
+            <h1 class="text-sm font-bold flex items-center space-x-2">
+                <span class="text-xl">🏢</span> <span id="headerCompanyName" class="tracking-wide">Smart Finance</span>
+            </h1>
+            <div class="flex items-center space-x-2">
+                <span id="displayLicenseKey" class="bg-yellow-500 text-black text-[10px] px-2 py-0.5 rounded font-bold">Key: --</span>
+                <button onclick="logoutCompany()" class="bg-red-600 text-white px-2.5 py-1 rounded-xl text-xs font-semibold shadow">Logout</button>
+            </div>
+        </header>
+
+        <div class="container mx-auto p-3 max-w-md space-y-4">
+            <!-- Navigation Grid -->
+            <div class="grid grid-cols-6 gap-1 bg-white p-3 rounded-2xl shadow-md text-center text-xs font-semibold">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="p-2 rounded-xl bg-blue-600 text-white flex flex-col items-center justify-center shadow-md"><span>📊</span><span class="mt-1">கணக்கு</span></button>
+                <button onclick="switchTab('customers')" id="btn-customers" class="p-2 rounded-xl bg-gray-50 text-gray-700 flex flex-col items-center justify-center"><span>👥</span><span class="mt-1">கஸ்டமர்</span></button>
+                <button onclick="switchTab('loans')" id="btn-loans" class="p-2 rounded-xl bg-gray-50 text-gray-700 flex flex-col items-center justify-center"><span>💳</span><span class="mt-1">லோன்</span></button>
+                <button onclick="switchTab('collection')" id="btn-collection" class="p-2 rounded-xl bg-gray-50 text-gray-700 flex flex-col items-center justify-center"><span>💵</span><span class="mt-1">வசூல்</span></button>
+                <button onclick="switchTab('sheet')" id="btn-sheet" class="p-2 rounded-xl bg-gray-50 text-gray-700 flex flex-col items-center justify-center"><span>📅</span><span class="mt-1">ஷீட்</span></button>
+                <button onclick="switchTab('expenses')" id="btn-expenses" class="p-2 rounded-xl bg-gray-50 text-gray-700 flex flex-col items-center justify-center"><span>📉</span><span class="mt-1">செலவு</span></button>
+            </div>
+
+            <!-- 1. Dashboard Tab -->
+            <div id="tab-dashboard" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                        <p class="text-gray-400 text-xs font-semibold">மொத்த கஸ்டமர்கள்</p>
+                        <h3 id="stat-customers" class="text-2xl font-bold mt-1">0</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-green-500">
+                        <p class="text-gray-400 text-xs font-semibold">கையில் ரொக்கம்</p>
+                        <h3 id="stat-cash" class="text-2xl font-bold mt-1 text-green-700">₹ 0</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-yellow-500">
+                        <p class="text-gray-400 text-xs font-semibold">ஆக்டிவ் லோன்கள்</p>
+                        <h3 id="stat-loans" class="text-2xl font-bold mt-1">0</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-indigo-500">
+                        <p class="text-gray-400 text-xs font-semibold">முன்வட்டி லாபம்</p>
+                        <h3 id="stat-profit" class="text-2xl font-bold mt-1 text-indigo-700">₹ 0</h3>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm space-y-4 border-t-4 border-indigo-600">
+                    <h2 class="font-bold text-gray-800 border-b pb-2 text-base">📊 P&L & முதலீட்டு அறிக்கை</h2>
+                    <div class="bg-blue-50 p-3 rounded-xl border flex justify-between items-center">
+                        <label class="text-xs font-bold text-blue-900">முதலீட்டுத் தொகை (₹):</label>
+                        <input type="number" id="userInvestmentInput" value="100000" onchange="updateInvestment(this.value)" class="w-32 p-2 text-right font-bold border rounded-xl bg-white text-sm">
+                    </div>
+                    <div class="space-y-2 text-sm bg-gray-50 p-4 rounded-xl border">
+                        <div class="flex justify-between"><span>முதற்க்கட்ட முதலீடு:</span> <span id="pl-investment" class="font-bold">₹ 1,00,000</span></div>
+                        <div class="flex justify-between text-green-600"><span>முன்வட்டி லாபம்:</span> <span id="pl-revenue" class="font-bold">+ ₹ 0</span></div>
+                        <div class="flex justify-between text-red-600"><span>கொடுத்த லோன்:</span> <span id="pl-given" class="font-bold">- ₹ 0</span></div>
+                        <div class="flex justify-between text-red-600 border-b pb-2"><span>சொந்தச் செலவுகள்:</span> <span id="pl-expenses" class="font-bold">- ₹ 0</span></div>
+                        <div class="flex justify-between font-bold text-blue-700 pt-1 text-base"><span>கையில் ரொக்கம்:</span> <span id="pl-cashinhand">₹ 0</span></div>
+                        <div class="flex justify-between font-bold text-indigo-700 pt-1 text-base border-t pt-2"><span>வர வேண்டியது:</span> <span id="pl-receivables">₹ 0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Customer Tab -->
+            <div id="tab-customers" class="hidden space-y-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm">
+                    <h2 id="custFormTitle" class="font-bold text-gray-800 border-b pb-2 mb-3 text-base">👥 புதிய கஸ்டமர் பதிவு</h2>
+                    <form id="customerForm" onsubmit="saveCustomer(event)" class="space-y-3 text-sm">
+                        <input type="hidden" id="editCustId">
+                        <input type="text" id="custName" placeholder="கஸ்டமர் பெயர்" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        <input type="text" id="custPhone" placeholder="போன் நம்பர் (10 இலக்கம்)" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        <textarea id="custAddress" placeholder="முகவரி" required class="w-full p-3 border rounded-xl bg-gray-50 h-16"></textarea>
+                        <input type="text" id="guardName" placeholder="கேரண்டர் பெயர்" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        <input type="text" id="guardPhone" placeholder="கேரண்டர் போன் நம்பர்" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        <textarea id="guardAddress" placeholder="கேரண்டர் முகவரி" required class="w-full p-3 border rounded-xl bg-gray-50 h-16"></textarea>
+                        <div class="flex space-x-2 pt-2">
+                            <button type="submit" id="custSubmitBtn" class="flex-1 bg-blue-600 text-white p-3 rounded-xl font-bold shadow">சேமிக்கவும்</button>
+                            <button type="button" onclick="resetCustomerForm()" class="bg-gray-300 text-gray-700 px-4 py-3 rounded-xl font-bold">ரத்து</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm">
+                    <h2 class="font-bold text-gray-800 border-b pb-2 mb-3 text-base">📋 கஸ்டமர்கள் பட்டியல்</h2>
+                    <div id="customerListContainer" class="space-y-2 text-sm"></div>
+                </div>
+            </div>
+
+            <!-- 3. Loan Tab -->
+            <div id="tab-loans" class="hidden space-y-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm">
+                    <h2 id="loanFormTitle" class="font-bold text-gray-800 border-b pb-2 mb-3 text-base">💳 கடன் வழங்குதல்</h2>
+                    <form id="loanForm" onsubmit="saveLoan(event)" class="space-y-3 text-sm">
+                        <input type="hidden" id="editLoanId">
+                        <select id="loanCustSelect" required class="w-full p-3 border rounded-xl bg-gray-50"></select>
+                        <select id="schemeType" onchange="toggleSchemeFields()" class="w-full p-3 border rounded-xl bg-gray-50">
+                            <option value="daily">டெய்லி ஃபைனான்ஸ் (100 நாட்கள்)</option>
+                            <option value="chit">வார சீட்டு</option>
+                            <option value="interest">மாதாந்திர வட்டி</option>
+                        </select>
+                        <input type="date" id="loanStartDate" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        <div id="schemeFields" class="p-3 bg-gray-50 rounded-xl border space-y-2"></div>
+                        <div class="flex space-x-2 pt-2">
+                            <button type="submit" id="loanSubmitBtn" class="flex-1 bg-green-600 text-white p-3 rounded-xl font-bold shadow">லோனை தொடங்கு & SMS</button>
+                            <button type="button" onclick="resetLoanForm()" class="bg-gray-300 text-gray-700 px-4 py-3 rounded-xl font-bold">ரத்து</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm">
+                    <h2 class="font-bold text-gray-800 border-b pb-2 mb-3 text-base">📜 ஆக்டிவ் லோன்கள்</h2>
+                    <div id="loanListContainer" class="space-y-2 text-sm"></div>
+                </div>
+            </div>
+
+            <!-- 4. Collection & WhatsApp Document Receipt Tab -->
+            <div id="tab-collection" class="hidden space-y-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm space-y-3">
+                    <h2 class="font-bold text-gray-800 border-b pb-2 text-base">💵 நேரடி வசூல் & அதிகாரப்பூர்வ ரெசிப்ட்</h2>
+                    <form onsubmit="recordCollection(event)" class="space-y-3 text-sm">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">கடன் கணக்கை தேர்வு செய்க</label>
+                            <select id="collectionLoanSelect" required class="w-full p-3 border rounded-xl bg-gray-50"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">பணம் கட்டிய தேதி (Payment Date)</label>
+                            <input type="date" id="collDate" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">எந்த நாளுக்கான தவணை? (EMI Target Date)</label>
+                            <input type="date" id="emiTargetDate" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">பேமெண்ட் முறை</label>
+                            <select id="collMode" class="w-full p-3 border rounded-xl bg-gray-50">
+                                <option value="Cash">நேரடி ரொக்கம் (Cash)</option>
+                                <option value="QR">UPI QR கோடு (GPay/PhonePe)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">வசூலித்த தொகை (₹)</label>
+                            <input type="number" id="collAmount" placeholder="எ.கா: 100" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="isFinalSettlement" class="w-4 h-4 text-blue-600 rounded">
+                            <label for="isFinalSettlement" class="text-xs font-semibold text-red-600">இது இறுதித் தவணை (Final Settlement)</label>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl font-bold shadow transition">வசூல் பதிவு செய்து WhatsApp Receipt அனுப்பு</button>
+                    </form>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-2">
+                    <h2 class="font-bold text-gray-800 border-b pb-2 w-full text-sm">📷 UPI QR கோடு</h2>
+                    <input type="text" id="upiId" value="myfinance@oksbi" class="w-full p-3 border rounded-xl text-xs bg-gray-50" oninput="generateQRCode()">
+                    <div id="qrcode" class="p-3 bg-white border rounded-xl shadow-inner"></div>
+                </div>
+            </div>
+
+            <!-- 5. Sheet Tab -->
+            <div id="tab-sheet" class="hidden bg-white p-5 rounded-2xl shadow-sm space-y-4">
+                <div class="flex flex-col space-y-2 border-b pb-3">
+                    <h2 class="font-bold text-gray-800 text-sm">📅 மாதாந்திர டெய்லி கலெக்ஷன் ஷீட்</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="sheetYear" onchange="loadCollectionSheet()" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-semibold">
+                            <option value="2026" selected>2026</option>
+                            <option value="2027">2027</option>
+                        </select>
+                        <select id="sheetMonth" onchange="loadCollectionSheet()" class="w-full p-2 border rounded-xl text-xs bg-gray-50 font-semibold">
+                            <option value="1">ஜனவரி</option><option value="2">பிப்ரவரி</option><option value="3">மார்ச்</option>
+                            <option value="4">ஏப்ரல்</option><option value="5">மே</option><option value="6">ஜூன்</option>
+                            <option value="7">ஜூலை</option><option value="8">ஆகஸ்ட்</option><option value="9">செப்டம்பர்</option>
+                            <option value="10" selected>அக்டோபர்</option><option value="11">நவம்பர்</option><option value="12">டிசம்பர்</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table id="collectionSheetTable" class="w-full text-xs text-center border-collapse border border-gray-200"></table>
+                </div>
+            </div>
+
+            <!-- 6. Expenses Tab -->
+            <div id="tab-expenses" class="hidden space-y-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm">
+                    <h2 class="font-bold text-gray-800 border-b pb-2 mb-3 text-base">📉 சொந்தச் செலவு / வித்ட்ராவல்</h2>
+                    <form onsubmit="saveExpense(event)" class="space-y-3 text-sm">
+                        <input type="date" id="expDate" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        <input type="number" id="expAmount" placeholder="தொகை (₹)" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        <input type="text" id="expRemarks" placeholder="காரணம் / குறிப்பு" required class="w-full p-3 border rounded-xl bg-gray-50">
+                        <button type="submit" class="w-full bg-red-600 text-white p-3 rounded-xl font-bold shadow">செலவை பதிவு செய்</button>
+                    </form>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm">
+                    <h2 class="font-bold text-gray-800 border-b pb-2 mb-3 text-base">📜 செலவுகள் பட்டியல்</h2>
+                    <div id="expenseListContainer" class="space-y-2 text-sm"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let companyProfile = JSON.parse(localStorage.getItem('mf_company')) || null;
+        let customers = JSON.parse(localStorage.getItem('mf_customers')) || [];
+        let loans = JSON.parse(localStorage.getItem('mf_loans')) || [];
+        let collections = JSON.parse(localStorage.getItem('mf_collections')) || []; 
+        let expenses = JSON.parse(localStorage.getItem('mf_expenses')) || [];
+        let userInvestment = parseFloat(localStorage.getItem('mf_investment')) || 100000;
+        let generatedOtp = null;
+
+        const validLicenseKeys = ["FIN-2026-BALA1", "FIN-2026-TEST2", "FIN-2026-PRO3", "FIN-2026-VIP9"];
+
+        window.onload = function() {
+            checkAuthView();
+            document.getElementById('userInvestmentInput').value = userInvestment;
+            document.getElementById('loanStartDate').valueAsDate = new Date();
+            document.getElementById('expDate').valueAsDate = new Date();
+            document.getElementById('collDate').valueAsDate = new Date();
+            document.getElementById('emiTargetDate').valueAsDate = new Date();
+            toggleSchemeFields();
+            updateDashboard();
+            generateQRCode();
+        };
+
+        function getDeviceToken() {
+            let deviceId = localStorage.getItem('mf_device_token');
+            if(!deviceId) {
+                deviceId = 'DEV-' + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem('mf_device_token', deviceId);
+            }
+            return deviceId;
+        }
+
+        function checkAuthView() {
+            if(!companyProfile) {
+                showRegisterView();
+            } else {
+                let boundDevice = localStorage.getItem('mf_bound_device');
+                let currentDevice = getDeviceToken();
+                if(boundDevice && boundDevice !== currentDevice) {
+                    alert('⚠️ இந்த லைசென்ஸ் கீ வேறு மொபைலில் லாக் செய்யப்பட்டுள்ளது!');
+                    localStorage.removeItem('mf_company');
+                    companyProfile = null;
+                    showRegisterView();
+                    return;
+                }
+                showLoginView();
+            }
+        }
+
+        function showLoginView() {
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('companyLoginForm').classList.remove('hidden');
+            document.getElementById('companyRegForm').classList.add('hidden');
+            document.getElementById('forgotPasswordBox').classList.add('hidden');
+        }
+
+        function showRegisterView() {
+            document.getElementById('authScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('companyLoginForm').classList.add('hidden');
+            document.getElementById('companyRegForm').classList.remove('hidden');
+            document.getElementById('forgotPasswordBox').classList.add('hidden');
+        }
+
+        function showForgotView() {
+            document.getElementById('companyLoginForm').classList.add('hidden');
+            document.getElementById('companyRegForm').classList.add('hidden');
+            document.getElementById('forgotPasswordBox').classList.remove('hidden');
+        }
+
+        function registerCompany(e) {
+            e.preventDefault();
+            let licenseKey = document.getElementById('regLicenseKey').value.trim();
+            if(!validLicenseKeys.includes(licenseKey)) {
+                alert('⚠️ தவறான லைசென்ஸ் கீ!');
+                return;
+            }
+            let currentDevice = getDeviceToken();
+            localStorage.setItem('mf_bound_device', currentDevice);
+            localStorage.setItem('mf_bound_key_' + licenseKey, currentDevice);
+
+            companyProfile = {
+                licenseKey: licenseKey,
+                name: document.getElementById('regCompName').value,
+                owner: document.getElementById('regOwner').value,
+                phone: document.getElementById('regPhone').value,
+                email: document.getElementById('regEmail').value,
+                address: document.getElementById('regAddress').value,
+                user: document.getElementById('regUser').value,
+                pass: document.getElementById('regPass').value
+            };
+            localStorage.setItem('mf_company', JSON.stringify(companyProfile));
+            alert('🎉 கம்பெனி பதிவு வெற்றிகரமாக முடிந்தது!');
+            showLoginView();
+        }
+
+        function loginCompany(e) {
+            e.preventDefault();
+            let u = document.getElementById('loginUser').value;
+            let p = document.getElementById('loginPass').value;
+            if(companyProfile && u === companyProfile.user && p === companyProfile.pass) {
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('headerCompanyName').textContent = companyProfile.name;
+                document.getElementById('displayLicenseKey').textContent = 'Key: ' + companyProfile.licenseKey;
+                switchTab('dashboard');
+            } else {
+                alert('தவறான Username அல்லது Password!');
+            }
+        }
+
+        function sendOtp() {
+            let target = document.getElementById('forgotTarget').value;
+            if(!companyProfile || (target !== companyProfile.phone && target !== companyProfile.email)) {
+                alert('பதிவு செய்யப்பட்ட போன் நம்பர்/மெயில் சரியாக இல்லை!');
+                return;
+            }
+            generatedOtp = Math.floor(100000 + Math.random() * 900000);
+            alert(`டெமோ OTP: ${generatedOtp}`);
+            document.getElementById('otpSection').classList.remove('hidden');
+        }
+
+        function verifyAndResetPass() {
+            let otp = document.getElementById('enteredOtp').value;
+            let newPass = document.getElementById('newResetPass').value;
+            if(otp == generatedOtp && newPass) {
+                companyProfile.pass = newPass;
+                localStorage.setItem('mf_company', JSON.stringify(companyProfile));
+                alert('பாஸ்வேர்ட் மாற்றப்பட்டது! Login செய்யவும்.');
+                showLoginView();
+            } else {
+                alert('OTP தவறு!');
+            }
+        }
+
+        function logoutCompany() { checkAuthView(); }
+
+        function switchTab(tabId) {
+            ['dashboard', 'customers', 'loans', 'collection', 'sheet', 'expenses'].forEach(t => {
+                let tab = document.getElementById('tab-' + t);
+                let btn = document.getElementById('btn-' + t);
+                if(tab) tab.classList.add('hidden');
+                if(btn) btn.className = 'p-2 rounded-xl bg-gray-50 text-gray-700 flex flex-col items-center justify-center';
+            });
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).className = 'p-2 rounded-xl bg-blue-600 text-white flex flex-col items-center justify-center shadow-md';
+            
+            updateDashboard();
+            if(tabId === 'customers') loadCustomerList();
+            if(tabId === 'loans') { loadCustomerDropdown(); loadLoanList(); }
+            if(tabId === 'collection') loadCollectionDropdowns();
+            if(tabId === 'sheet') loadCollectionSheet();
+            if(tabId === 'expenses') loadExpenseList();
+        }
+
+        function updateInvestment(val) {
+            userInvestment = parseFloat(val) || 0;
+            localStorage.setItem('mf_investment', userInvestment);
+            updateDashboard();
+        }
+
+        function saveCustomer(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editCustId').value;
+            const custData = {
+                id: editId ? parseInt(editId) : Date.now(),
+                name: document.getElementById('custName').value,
+                phone: document.getElementById('custPhone').value,
+                address: document.getElementById('custAddress').value,
+                guardName: document.getElementById('guardName').value,
+                guardPhone: document.getElementById('guardPhone').value,
+                guardAddress: document.getElementById('guardAddress').value
+            };
+            if(editId) {
+                let idx = customers.findIndex(c => c.id == editId);
+                if(idx !== -1) customers[idx] = custData;
+                alert('கஸ்டமர் விவரம் திருத்தப்பட்டது!');
+            } else {
+                customers.push(custData);
+                alert('புதிய கஸ்டமர் சேமிக்கப்பட்டார்!');
+            }
+            localStorage.setItem('mf_customers', JSON.stringify(customers));
+            resetCustomerForm();
+            loadCustomerList();
+            updateDashboard();
+        }
+
+        function loadCustomerList() {
+            const container = document.getElementById('customerListContainer');
+            container.innerHTML = '';
+            if(customers.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-2">கஸ்டமர்கள் யாரும் இல்லை</p>';
+                return;
+            }
+            customers.forEach((c, index) => {
+                container.innerHTML += `
+                    <div class="p-3 border rounded-xl flex justify-between items-center bg-gray-50 shadow-sm">
+                        <div><b>#${index+1} ${c.name}</b><br><span class="text-xs text-gray-500">${c.phone} | ${c.address}</span></div>
+                        <div class="space-x-1">
+                            <button onclick="editCustomer(${c.id})" class="bg-yellow-500 text-white px-2.5 py-1 rounded-lg text-xs">எடிட்</button>
+                            <button onclick="deleteCustomer(${c.id})" class="bg-red-500 text-white px-2.5 py-1 rounded-lg text-xs">நீக்கு</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function editCustomer(id) {
+            let c = customers.find(item => item.id == id);
+            if(!c) return;
+            document.getElementById('editCustId').value = c.id;
+            document.getElementById('custName').value = c.name;
+            document.getElementById('custPhone').value = c.phone;
+            document.getElementById('custAddress').value = c.address;
+            document.getElementById('guardName').value = c.guardName;
+            document.getElementById('guardPhone').value = c.guardPhone;
+            document.getElementById('guardAddress').value = c.guardAddress;
+            document.getElementById('custFormTitle').innerHTML = '👥 <span>கஸ்டமரை திருத்துக</span>';
+            document.getElementById('custSubmitBtn').textContent = 'புதுப்பி';
+        }
+
+        function resetCustomerForm() {
+            document.getElementById('customerForm').reset();
+            document.getElementById('editCustId').value = '';
+            document.getElementById('custFormTitle').innerHTML = '👥 <span>புதிய கஸ்டமர் பதிவு</span>';
+            document.getElementById('custSubmitBtn').textContent = 'சேமிக்கவும்';
+        }
+
+        function deleteCustomer(id) {
+            if(confirm('நீக்க விரும்புகிறீர்களா?')) {
+                customers = customers.filter(c => c.id != id);
+                localStorage.setItem('mf_customers', JSON.stringify(customers));
+                loadCustomerList();
+                updateDashboard();
+            }
+        }
+
+        function loadCustomerDropdown() {
+            const select = document.getElementById('loanCustSelect');
+            if(!select) return;
+            select.innerHTML = '';
+            if(customers.length === 0) {
+                select.innerHTML = '<option value="">முதலில் கஸ்டமரை பதிவு செய்யவும்</option>';
+                return;
+            }
+            customers.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${c.name} (${c.phone})</option>`;
+            });
+        }
+
+        function toggleSchemeFields() {
+            let type = document.getElementById('schemeType').value;
+            let container = document.getElementById('schemeFields');
+            if(type === 'daily') {
+                container.innerHTML = `
+                    <label class="text-xs font-semibold text-gray-600">மொத்த லோன் தொகை (₹)</label><input type="number" id="loanAmount" value="20000" class="w-full p-2.5 border rounded-xl mb-2 text-sm bg-white" oninput="calcNetGiven()">
+                    <label class="text-xs font-semibold text-gray-600">முன்வட்டி லாபம் (₹)</label><input type="number" id="upfrontInterest" value="3600" class="w-full p-2.5 border rounded-xl mb-2 text-sm bg-white" oninput="calcNetGiven()">
+                    <label class="text-xs font-semibold text-gray-600">கைவசம் கொடுப்பது (Net Given ₹)</label><input type="number" id="netGivenAmt" value="16400" readonly class="w-full p-2.5 border rounded-xl text-sm bg-gray-100 font-bold text-green-700">`;
+            } else if(type === 'chit') {
+                container.innerHTML = `<label class="text-xs font-semibold text-gray-600">வார தவணை (₹)</label><input type="number" id="chitAmt" value="200" class="w-full p-2 border rounded-xl text-sm bg-white">`;
+            } else if(type === 'interest') {
+                container.innerHTML = `<label class="text-xs font-semibold text-gray-600">அசல் தொகை (₹)</label><input type="number" id="principal" value="10000" class="w-full p-2 border rounded-xl mb-2 text-sm bg-white">
+                    <label class="text-xs font-semibold text-gray-600">மாத வட்டி (%)</label><input type="number" id="rate" value="3" class="w-full p-2 border rounded-xl text-sm bg-white">`;
+            }
+        }
+
+        function calcNetGiven() {
+            let amt = parseFloat(document.getElementById('loanAmount')?.value) || 0;
+            let profit = parseFloat(document.getElementById('upfrontInterest')?.value) || 0;
+            let net = document.getElementById('netGivenAmt');
+            if(net) net.value = Math.max(0, amt - profit);
+        }
+
+        function saveLoan(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editLoanId').value;
+            let totalAmt = document.getElementById('loanAmount') ? parseFloat(document.getElementById('loanAmount').value) : 20000;
+            let profitAmt = document.getElementById('upfrontInterest') ? parseFloat(document.getElementById('upfrontInterest').value) : 3600;
+            let netGivenAmt = totalAmt - profitAmt;
+            let startDate = document.getElementById('loanStartDate').value;
+            let custId = document.getElementById('loanCustSelect').value;
+
+            const loanData = {
+                id: editId ? parseInt(editId) : Date.now(),
+                custId: custId,
+                type: document.getElementById('schemeType').value,
+                startDate: startDate,
+                amount: totalAmt,
+                profit: profitAmt,
+                netGiven: netGivenAmt
+            };
+
+            if(editId) {
+                let idx = loans.findIndex(item => item.id == editId);
+                if(idx !== -1) loans[idx] = loanData;
+                alert('லோன் விவரம் திருத்தப்பட்டது!');
+            } else {
+                loans.push(loanData);
+                let cust = customers.find(c => c.id == custId);
+                if(cust && cust.phone) {
+                    let compName = companyProfile ? companyProfile.name : 'Smart Finance';
+                    let welcomeMsg = `வணக்கம் ${cust.name}, *${compName}* நிறுவனத்தில் நீங்கள் ${startDate} அன்று ரூ.${totalAmt} கடன் பெற்றுள்ளீர்கள். நன்றி!`;
+                    window.open(`https://wa.me/91${cust.phone}?text=${encodeURIComponent(welcomeMsg)}`, '_blank');
+                }
+                alert('புதிய லோன் வெற்றிகரமாக வழங்கப்பட்டது!');
+            }
+            localStorage.setItem('mf_loans', JSON.stringify(loans));
+            resetLoanForm();
+            loadLoanList();
+            updateDashboard();
+        }
+
+        function loadLoanList() {
+            const container = document.getElementById('loanListContainer');
+            container.innerHTML = '';
+            if(loans.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-2">லோன்கள் எதுவும் இல்லை</p>';
+                return;
+            }
+            loans.forEach((l, index) => {
+                let cust = customers.find(c => c.id == l.custId) || { name: 'Unknown' };
+                container.innerHTML += `
+                    <div class="p-3 border rounded-xl flex justify-between items-center bg-gray-50 shadow-sm">
+                        <div><b>#${index+1} ${cust.name}</b><br><span class="text-xs text-gray-500">லோன்: ₹${l.amount} | லாபம்: ₹${l.profit}</span></div>
+                        <div class="space-x-1">
+                            <button onclick="editLoan(${l.id})" class="bg-yellow-500 text-white px-2.5 py-1 rounded-lg text-xs">எடிட்</button>
+                            <button onclick="deleteLoan(${l.id})" class="bg-red-500 text-white px-2.5 py-1 rounded-lg text-xs">நீக்கு</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function editLoan(id) {
+            let l = loans.find(item => item.id == id);
+            if(!l) return;
+            document.getElementById('editLoanId').value = l.id;
+            document.getElementById('loanCustSelect').value = l.custId;
+            document.getElementById('schemeType').value = l.type;
+            document.getElementById('loanStartDate').value = l.startDate;
+            toggleSchemeFields();
+            if(document.getElementById('loanAmount')) document.getElementById('loanAmount').value = l.amount;
+            if(document.getElementById('upfrontInterest')) document.getElementById('upfrontInterest').value = l.profit;
+            calcNetGiven();
+            document.getElementById('loanFormTitle').innerHTML = '💳 <span>லோனை திருத்துக</span>';
+            document.getElementById('loanSubmitBtn').textContent = 'புதுப்பி';
+        }
+
+        function resetLoanForm() {
+            document.getElementById('loanForm').reset();
+            document.getElementById('editLoanId').value = '';
+            document.getElementById('loanFormTitle').innerHTML = '💳 <span>கடன் வழங்குதல்</span>';
+            document.getElementById('loanSubmitBtn').textContent = 'லோனை தொடங்கு & SMS';
+            document.getElementById('loanStartDate').valueAsDate = new Date();
+            toggleSchemeFields();
+        }
+
+        function deleteLoan(id) {
+            if(confirm('இந்த லோனை நீக்க விரும்புகிறீர்களா?')) {
+                loans = loans.filter(l => l.id != id);
+                localStorage.setItem('mf_loans', JSON.stringify(loans));
+                loadLoanList();
+                updateDashboard();
+            }
+        }
+
+        function loadCollectionDropdowns() {
+            const select = document.getElementById('collectionLoanSelect');
+            if(!select) return;
+            select.innerHTML = '';
+            if(loans.length === 0) {
+                select.innerHTML = '<option value="">ஆக்டிவ் லோன்கள் இல்லை</option>';
+                return;
+            }
+            loans.forEach(l => {
+                let cust = customers.find(c => c.id == l.custId) || { name: 'Unknown' };
+                select.innerHTML += `<option value="${l.id}">${cust.name} (${l.type})</option>`;
+            });
+        }
+
+        // WhatsApp Document-Style Receipt Generation (Updated format)
+        function recordCollection(e) {
+            e.preventDefault();
+            const loanId = document.getElementById('collectionLoanSelect').value;
+            const amount = parseFloat(document.getElementById('collAmount').value);
+            const mode = document.getElementById('collMode').value;
+            const payDate = document.getElementById('collDate').value;
+            const emiDate = document.getElementById('emiTargetDate').value;
+            const isFinal = document.getElementById('isFinalSettlement').checked;
+
+            let receiptNo = 'REC-' + new Date().getFullYear() + '-' + String(collections.length + 1).padStart(3, '0');
+
+            collections.push({ loanId, amount, mode, date: payDate, emiDate: emiDate, receiptNo });
+            localStorage.setItem('mf_collections', JSON.stringify(collections));
+
+            let loan = loans.find(l => l.id == loanId);
+            let cust = customers.find(c => c.id == loan?.custId);
+            let compName = companyProfile ? companyProfile.name : 'Smart Finance';
+
+            alert(`வசூல் பதிவு செய்யப்பட்டது! ரெசிப்ட் எண்: ${receiptNo}`);
+            document.getElementById('collAmount').value = '';
+            document.getElementById('isFinalSettlement').checked = false;
+
+            if(cust && cust.phone) {
+                let documentReceiptText = 
+                    `==============================\n` +
+                    `🏢 *${compName.toUpperCase()}*\n` +
+                    `📄 *OFFICIAL PAYMENT RECEIPT*\n` +
+                    `==============================\n` +
+                    `🔢 *Receipt No:* ${receiptNo}\n` +
+                    `👤 *Customer Name:* ${cust.name}\n` +
+                    `📞 *Phone:* ${cust.phone}\n` +
+                    `------------------------------\n` +
+                    `📅 *Payment Date:* ${payDate}\n` +
+                    `📌 *EMI Target Date:* ${emiDate}\n` +
+                    `💳 *Mode:* ${mode}\n` +
+                    `💰 *Amount Paid:* ₹${amount}\n` +
+                    `==============================\n` +
+                    (isFinal ? `✅ *Status:* FINAL SETTLEMENT (Loan Closed)\n==============================\n` : ``) +
+                    `🙏 உங்கள் தொடர்ந்த ஆதரவிற்கு நன்றி!\n` +
+                    `==============================`;
+
+                window.open(`https://wa.me/91${cust.phone}?text=${encodeURIComponent(documentReceiptText)}`, '_blank');
+            }
+            updateDashboard();
+        }
+
+        function generateQRCode() {
+            let qrDiv = document.getElementById("qrcode");
+            if(qrDiv) {
+                qrDiv.innerHTML = "";
+                new QRCode(qrDiv, { text: `upi://pay?pa=${document.getElementById('upiId').value}&pn=Finance&cu=INR`, width: 140, height: 140 });
+            }
+        }
+
+        function loadCollectionSheet() {
+            const table = document.getElementById('collectionSheetTable');
+            const year = document.getElementById('sheetYear').value;
+            const month = parseInt(document.getElementById('sheetMonth').value);
+            table.innerHTML = '';
+
+            if(loans.length === 0 || customers.length === 0) {
+                table.innerHTML = '<tr><td class="p-4 text-center text-gray-400">கஸ்டமர்கள் அல்லது லோன்கள் இல்லை</td></tr>';
+                return;
+            }
+
+            let daysInMonth = new Date(year, month, 0).getDate();
+            let headerTr = document.createElement('tr');
+            headerTr.className = 'bg-blue-600 text-white font-semibold';
+            headerTr.innerHTML = '<th class="p-2 border">வ.எண்</th><th class="p-2 border">பெயர்</th><th class="p-2 border">வகை</th>';
+            for(let d = 1; d <= daysInMonth; d++) {
+                headerTr.innerHTML += `<th class="p-1 border text-xs">${d}</th>`;
+            }
+            headerTr.innerHTML += '<th class="p-2 border">மொத்தம்</th>';
+            table.appendChild(headerTr);
+
+            loans.forEach((l, index) => {
+                let cust = customers.find(c => c.id == l.custId) || { name: 'Unknown' };
+                let tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                
+                let rowHtml = `<td class="p-2 border">${index + 1}</td><td class="p-2 border font-bold text-left">${cust.name}</td><td class="p-2 border uppercase text-xs">${l.type}</td>`;
+                
+                let rowTotal = 0;
+                for(let d = 1; d <= daysInMonth; d++) {
+                    let dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    let coll = collections.find(c => c.loanId == l.id && c.emiDate == dateStr);
+                    let amt = coll ? coll.amount : '';
+                    if(coll) rowTotal += coll.amount;
+
+                    rowHtml += `<td class="p-1 border"><input type="number" value="${amt}" onchange="updateSheetCollection(${l.id}, '${dateStr}', this.value)" class="w-10 text-center text-xs border rounded p-0.5 bg-yellow-50 focus:bg-white"></td>`;
+                }
+                rowHtml += `<td class="p-2 border font-bold text-green-600">₹ ${rowTotal}</td>`;
+                tr.innerHTML = rowHtml;
+                table.appendChild(tr);
+            });
+
+            let bottomTotalTr = document.createElement('tr');
+            bottomTotalTr.className = 'bg-indigo-100 font-bold text-blue-900 border-t-2 border-blue-400';
+            let bottomHtml = '<td colspan="3" class="p-2 border text-right">தினசரி மொத்த வசூல்:</td>';
+            let grandMonthTotal = 0;
+
+            for(let d = 1; d <= daysInMonth; d++) {
+                let dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                let daySum = collections.filter(c => c.emiDate == dateStr).reduce((sum, c) => sum + c.amount, 0);
+                grandMonthTotal += daySum;
+                bottomHtml += `<td class="p-1 border text-xs text-blue-800 font-bold">${daySum > 0 ? '₹' + daySum : '-'}</td>`;
+            }
+            bottomHtml += `<td class="p-2 border text-green-700 font-bold text-sm">₹ ${grandMonthTotal}</td>`;
+            bottomTotalTr.innerHTML = bottomHtml;
+            table.appendChild(bottomTotalTr);
+        }
+
+        function updateSheetCollection(loanId, dateStr, amountVal) {
+            let amt = parseFloat(amountVal) || 0;
+            collections = collections.filter(c => !(c.loanId == loanId && c.emiDate == dateStr));
+            if(amt > 0) {
+                let receiptNo = 'REC-' + new Date().getFullYear() + '-' + String(collections.length + 1).padStart(3, '0');
+                collections.push({ loanId: loanId, emiDate: dateStr, date: new Date().toISOString().split('T')[0], amount: amt, mode: 'Sheet', receiptNo });
+            }
+            localStorage.setItem('mf_collections', JSON.stringify(collections));
+            updateDashboard();
+            loadCollectionSheet();
+        }
+
+        function saveExpense(e) {
+            e.preventDefault();
+            expenses.push({
+                id: Date.now(),
+                date: document.getElementById('expDate').value,
+                amount: parseFloat(document.getElementById('expAmount').value),
+                remarks: document.getElementById('expRemarks').value
+            });
+            localStorage.setItem('mf_expenses', JSON.stringify(expenses));
+            alert('செலவு பதிவு செய்யப்பட்டது!');
+            document.getElementById('expAmount').value = '';
+            document.getElementById('expRemarks').value = '';
+            loadExpenseList();
+            updateDashboard();
+        }
+
+        function loadExpenseList() {
+            const container = document.getElementById('expenseListContainer');
+            container.innerHTML = '';
+            if(expenses.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-2">செலவுகள் இல்லை</p>';
+                return;
+            }
+            expenses.forEach(ex => {
+                container.innerHTML += `<div class="p-3 border rounded-xl flex justify-between items-center bg-gray-50 shadow-sm">
+                    <div><b>${ex.remarks}</b><br><span class="text-xs text-gray-500">${ex.date}</span></div>
+                    <span class="text-red-600 font-bold">- ₹${ex.amount}</span>
+                </div>`;
+            });
+        }
+
+        function updateDashboard() {
+            let totalProfit = loans.reduce((sum, l) => sum + (l.profit || 0), 0);
+            let totalNetGiven = loans.reduce((sum, l) => sum + (l.netGiven !== undefined ? l.netGiven : (l.amount - l.profit)), 0);
+            let totalCollected = collections.reduce((sum, c) => sum + c.amount, 0);
+            let totalExpenses = expenses.reduce((sum, ex) => sum + ex.amount, 0);
+
+            let cashInHand = userInvestment - totalNetGiven + totalCollected - totalExpenses;
+            let totalLoanAmount = loans.reduce((sum, l) => sum + (l.amount || 0), 0);
+            let totalReceivables = Math.max(0, totalLoanAmount - totalCollected);
+
+            document.getElementById('stat-customers').textContent = customers.length;
+            document.getElementById('stat-loans').textContent = loans.length;
+            document.getElementById('stat-profit').textContent = '₹ ' + totalProfit.toLocaleString();
+            document.getElementById('stat-cash').textContent = '₹ ' + cashInHand.toLocaleString();
+
+            document.getElementById('pl-investment').textContent = '₹ ' + userInvestment.toLocaleString();
+            document.getElementById('pl-revenue').textContent = '+ ₹ ' + totalProfit.toLocaleString();
+            document.getElementById('pl-given').textContent = '- ₹ ' + totalNetGiven.toLocaleString();
+            document.getElementById('pl-expenses').textContent = '- ₹ ' + totalExpenses.toLocaleString();
+            document.getElementById('pl-cashinhand').textContent = '₹ ' + cashInHand.toLocaleString();
+            document.getElementById('pl-receivables').textContent = '₹ ' + totalReceivables.toLocaleString();
+        }
+    </script>
+</body>
+</html>
